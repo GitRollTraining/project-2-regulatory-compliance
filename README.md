@@ -5,7 +5,7 @@ Build and run an Agent Skill that helps a Compliance and Operations Manager comp
 ## Start
 
 1. Fork this repository and work on your fork's `main` branch.
-2. Use the interview link provided by your instructor to understand the manager's workflow, sources, ownership, and approval boundaries.
+2. Open the [Project B stakeholder interview](https://work-sim-alpha.catalyte.ai/s/project-b-regulatory-compliance) to understand the manager's workflow, sources, ownership, and approval boundaries.
 3. Implement one documented command that fetches the disclosed current sources, creates a snapshot, produces every required artifact, and validates the package.
 4. Run the command, review the results, and push the complete repository to `main` without changing or deleting `entire/checkpoints/v1`.
 
