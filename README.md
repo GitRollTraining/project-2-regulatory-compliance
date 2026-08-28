@@ -6,7 +6,7 @@ Build and run an Agent Skill that helps a Compliance and Operations Manager comp
 
 1. Fork this repository and work on your fork's `main` branch.
 2. Open the [Project B stakeholder interview](https://work-sim-alpha.catalyte.ai/s/project-b-regulatory-compliance) to understand the manager's workflow, sources, ownership, and approval boundaries.
-3. Implement one documented command that fetches the disclosed current sources, creates a snapshot, produces every required artifact, and validates the package.
+3. Implement one documented command that fetches the disclosed current sources, writes each required workflow snapshot when that stage completes, produces every final artifact, and validates the package.
 4. Run the command, review the results, and push the complete repository to `main` without changing or deleting `entire/checkpoints/v1`.
 
 Do not create a separate Session Log. The supported environment records the work automatically.
@@ -22,19 +22,37 @@ regulatory-change-impact-brief/
 └── references/
     └── <focused operating references>
 deliverables/
-├── snapshot.json
+├── snapshots/
+│   ├── 01-scope.json
+│   ├── 02-source-capture.json
+│   ├── 03-authority-and-timing.json
+│   ├── 04-evidence-reconciliation.json
+│   ├── 05-impact-analysis.json
+│   ├── 06-actions-and-approvals.json
+│   └── 07-publication-validation.json
 ├── impact-register.csv
 ├── compliance-brief.md
 └── action-calendar.ics
 ```
 
-Minimum artifact contract:
+## Required snapshot chain
 
-- `snapshot.json` must conform to [`snapshot.schema.json`](snapshot.schema.json). It records every attempted source, including failed or unused attempts, and marks whether retrieved evidence was used for claims.
-- Run status is `complete`, `partial`, `blocked`, or `failed`. Retrieval status is `retrieved`, `unavailable`, `invalid`, `unverified`, or `stale`. Impact state is `supported-impact`, `supported-no-impact`, `conflicting`, or `unresolved`.
-- `complete` means the normal package passed validation; `partial` means supported work remains usable with non-blocking gaps; `blocked` means required evidence prevents dependent conclusions but a reviewable failure package exists; `failed` means no reviewable package beyond the failure record could be produced. Record the status that actually occurred—do not simulate every state.
-- For source attempts, use `retrieved` only after content checks pass; `unavailable` when it cannot be obtained; `invalid` when the response fails format or semantic checks; `unverified` when identity, authority, or freshness cannot be established; and `stale` when retrieved content is too old for a current claim.
-- Keep every required `decision_state` collection in the JSON. Use an empty array when that class did not occur; do not invent records merely to demonstrate a status.
+Every stage file must conform to [`snapshot.schema.json`](snapshot.schema.json). All seven use one `run_id`. From stage 2 onward, `predecessor` identifies and hashes the immediately preceding file. Each stage names the upstream record IDs it consumed and the record IDs it produced.
+
+| Stage | Required state |
+|---|---|
+| 01 | as-of time, review type, systems, audiences, approval gates |
+| 02 | every source attempt and retrieval result |
+| 03 | binding rules, timing, labelled guidance, authority blockers |
+| 04 | system facts, policy controls, incidents, conflicts, evidence gaps |
+| 05 | impacts, unaffected records, conflicts, unresolved items |
+| 06 | actions, escalations, owners, approvals, learner decisions |
+| 07 | final artifact paths and hashes, validation and publication status |
+
+Run status is `complete`, `partial`, `blocked`, or `failed`. Retrieval status is `retrieved`, `unavailable`, `invalid`, `unverified`, or `stale`. Impact state is `supported-impact`, `supported-no-impact`, `conflicting`, or `unresolved`. Do not invent records to demonstrate a state, and do not let a missing or conflicting record disappear downstream without a traceable reason.
+
+## Final artifacts
+
 - `impact-register.csv` has one row per impact or unresolved item with stable IDs, state, evidence references, reason, responsible owner, proposed action when applicable, and approval state.
 - `compliance-brief.md` states scope, source status, supported impacts, unresolved items, actions, limitations, and pending Legal and Operations decisions.
 - `action-calendar.ics` is a valid draft calendar whose events identify the proposed action, timing, owner or review role, and pending approval state.
@@ -49,7 +67,7 @@ skills-ref validate ./regulatory-change-impact-brief
 
 Each invocation must read the current disclosed remote sources. Do not use bundled answers or a silent cached copy as the primary source.
 
-`deliverables/snapshot.json` is part of the submitted result. Record the run context, every attempted source and retrieval result, the evidence actually used, supported facts and impacts, conflicts, unresolved items, proposed actions, approval requirements, and your material design decisions and rationale. Preserve enough source identity, timing, version or locator information, and captured evidence for another reviewer to trace the package without asking the assessment system to fetch the source again. Validate it against `snapshot.schema.json` before reporting a successful run.
+The seven snapshots are part of the submitted result. Write them during the workflow, not retrospectively after the final report. Preserve enough source identity, timing, version or locator information, predecessor hashes, and stable record IDs for another reviewer to follow the complete document-to-decision path without refetching the source.
 
 You do not need to reconstruct an earlier version of an external website. If authoritative regulatory evidence is unavailable, block formal impact conclusions and produce an explicitly failed or unresolved draft instead.
 
@@ -57,4 +75,4 @@ You do not need to reconstruct an earlier version of an external website. If aut
 
 The workflow is read-only. It may prepare local drafts, but it must not expose credentials, alter a source, submit an official response, give final legal advice, activate policy, change an approved deadline, close an incident, or write to a production calendar. Legal and Operations retain their stated decisions.
 
-Before pushing, run the documented command from a clean checkout and confirm that the snapshot, register, brief, and draft calendar agree.
+Before pushing, run the documented command from a clean checkout and confirm that every snapshot passes the schema, the lineage is intact, and the register, brief, and draft calendar agree with stages 06–07.
