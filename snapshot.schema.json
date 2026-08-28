@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gitroll.dev/curriculum/projects/regulatory-compliance/snapshot.schema.json",
+  "title": "Regulatory Compliance Run Snapshot",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "run", "evidence", "decision_state"],
+  "properties": {
+    "schema_version": {"const": "regulatory-compliance-snapshot/1"},
+    "run": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "as_of", "scope", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "as_of": {"type": "string", "format": "date-time"},
+        "scope": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": true
+        },
+        "status": {
+          "enum": ["complete", "partial", "blocked", "failed"]
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidenceRecord"}
+    },
+    "decision_state": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "supported_facts",
+        "impacts",
+        "unaffected_items",
+        "conflicts",
+        "unresolved_items",
+        "proposed_actions",
+        "approval_requirements",
+        "design_decisions"
+      ],
+      "properties": {
+        "supported_facts": {"$ref": "#/$defs/records"},
+        "impacts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/impactRecord"}
+        },
+        "unaffected_items": {"$ref": "#/$defs/records"},
+        "conflicts": {"$ref": "#/$defs/records"},
+        "unresolved_items": {"$ref": "#/$defs/records"},
+        "proposed_actions": {"$ref": "#/$defs/records"},
+        "approval_requirements": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/approvalRecord"}
+        },
+        "design_decisions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/designDecisionRecord"}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "run": {
+            "properties": {"status": {"enum": ["complete", "partial", "blocked"]}},
+            "required": ["status"]
+          }
+        },
+        "required": ["run"]
+      },
+      "then": {"properties": {"evidence": {"minItems": 1}}}
+    }
+  ],
+  "$defs": {
+    "nullableNonEmptyString": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "evidenceRecord": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "source_role",
+        "authority",
+        "locator",
+        "retrieved_at",
+        "retrieval_status",
+        "content_type",
+        "version_metadata",
+        "used_for_claims",
+        "content_hash",
+        "local_reference"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "source_role": {
+          "enum": ["binding-regulation", "official-guidance", "internal-policy", "operational-record", "other"]
+        },
+        "authority": {
+          "enum": ["binding", "advisory", "internal-control", "operational-evidence", "unknown"]
+        },
+        "locator": {"type": "string", "minLength": 1},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "retrieval_status": {
+          "enum": ["retrieved", "unavailable", "invalid", "unverified", "stale"]
+        },
+        "content_type": {"type": "string", "minLength": 1},
+        "version_metadata": {"type": ["object", "null"]},
+        "used_for_claims": {"type": "boolean"},
+        "content_hash": {
+          "anyOf": [
+            {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+            {"type": "null"}
+          ]
+        },
+        "local_reference": {"$ref": "#/$defs/nullableNonEmptyString"},
+        "captured_evidence": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "object", "minProperties": 1},
+            {"type": "array", "minItems": 1}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"used_for_claims": {"const": true}}, "required": ["used_for_claims"]},
+          "then": {
+            "properties": {"retrieval_status": {"const": "retrieved"}},
+            "anyOf": [
+              {"required": ["captured_evidence"]},
+              {"properties": {"local_reference": {"type": "string", "minLength": 1}}, "required": ["local_reference"]}
+            ]
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {"required": ["captured_evidence"]},
+              {"properties": {"local_reference": {"type": "string", "minLength": 1}}, "required": ["local_reference"]}
+            ]
+          },
+          "then": {
+            "properties": {"content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+          }
+        }
+      ]
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "summary", "evidence_ids", "owner", "rationale"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "evidence_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "owner": {"$ref": "#/$defs/nullableNonEmptyString"},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/record"}
+    },
+    "impactRecord": {
+      "allOf": [
+        {"$ref": "#/$defs/record"},
+        {
+          "type": "object",
+          "required": ["state", "approval_status"],
+          "properties": {
+            "state": {
+              "enum": ["supported-impact", "supported-no-impact", "conflicting", "unresolved"]
+            },
+            "approval_status": {
+              "enum": ["pending", "approved", "rejected", "not-required"]
+            }
+          }
+        }
+      ]
+    },
+    "approvalRecord": {
+      "allOf": [
+        {"$ref": "#/$defs/record"},
+        {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {"enum": ["pending", "approved", "rejected", "not-required"]}
+          }
+        }
+      ]
+    },
+    "designDecisionRecord": {
+      "allOf": [
+        {"$ref": "#/$defs/record"},
+        {
+          "type": "object",
+          "required": ["tradeoffs"],
+          "properties": {
+            "tradeoffs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      ]
+    }
+  }
+}
