@@ -51,6 +51,16 @@ Every stage file must conform to [`snapshot.schema.json`](snapshot.schema.json).
 
 Run status is `complete`, `partial`, `blocked`, or `failed`. Retrieval status is `retrieved`, `unavailable`, `invalid`, `unverified`, or `stale`. Impact state is `supported-impact`, `supported-no-impact`, `conflicting`, or `unresolved`. Do not invent records to demonstrate a state, and do not let a missing or conflicting record disappear downstream without a traceable reason.
 
+## Decision behavior
+
+The seven files are an ordered audit trail, but the business workflow is not always a happy path:
+
+- unavailable binding evidence blocks formal impact conclusions and remains visible downstream;
+- for another unavailable required source, choose and document either a whole-run block or a safely bounded partial result, then apply that policy consistently;
+- insufficient or conflicting applicability evidence stays unresolved with an owner and required next evidence;
+- a correctable validation failure returns to the earliest affected stage and reruns downstream work;
+- Legal interpretation and Operations activation, dates, and closure remain pending human decisions.
+
 ## Final artifacts
 
 - `impact-register.csv` has one row per impact or unresolved item with stable IDs, state, evidence references, reason, responsible owner, proposed action when applicable, and approval state.
