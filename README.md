@@ -11,6 +11,8 @@ Build and run an Agent Skill that helps a Compliance and Operations Manager comp
 
 Do not create a separate Session Log. The supported environment records the work automatically.
 
+**Interview rule.** You conduct the stakeholder interview yourself, and the questions are yours. Do not connect a coding agent or any other AI to the interview to run, script, or automate it. The interview transcript is assessed together with the code; a project whose interview was run by an agent is not scored.
+
 ## Required submission
 
 ```text
